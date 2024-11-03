@@ -1,0 +1,5 @@
+.idea
+tmp
+venv
+ytdl.sqlite
+__pycache__
