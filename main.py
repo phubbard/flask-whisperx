@@ -3,7 +3,7 @@ from multiprocessing import Process
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
 from pathlib import Path
-
+import time
 from flask import Flask, request, render_template, url_for, redirect, make_response, abort
 
 from model import save_log_message, get_job, get_job_logs, \
@@ -17,14 +17,14 @@ app.logger.setLevel('DEBUG')
 
 # Worker process - single download job
 # TODO poll the DB for other new jobs
-def worker(audio_file: Path, job_id: str):
+def worker(audio_file: Path, job_id: str, title: str):
     # TODO call whisperX
-    log_str = f'Starting WhisperX on {job_id} from {audio_file.name}'
+    log_str = f'Starting WhisperX on {job_id} from "{title}"'
     app.logger.info(log_str)
     save_log_message(job_id, log_str)
-
+    time.sleep(5)
     update_job_status(job_id, 'DONE', 0)
-    save_log_message(job_id, 'Done')
+    save_log_message(job_id, f'Done with {job_id}')
 
 # Display the to-be-downloaded page (index)
 @app.route('/', methods=['GET'])
@@ -69,9 +69,11 @@ def submit():
     # Save to DB
     save_new_job(job_id, title)
     update_job_status(job_id, 'RUNNING', 0)
-    # worker(audio_file, job_id)
-    p = Process(target=worker, args=(audio_file, job_id))
-    p.start()
+    worker(audio_file, job_id, title)
+    # NB Process commented out - with just the 2080 we are limited to one job at a time,
+    # so its best to block on completion
+    # p = Process(target=worker, args=(audio_file, job_id, title))
+    # p.start()
     # send to new in-process page, job_id as key
     return redirect(f'/job/{job_id}')
 
@@ -82,11 +84,14 @@ def retry(job_id):
     if job_info is None:
         return make_response(f'Job {job_id} not found', 404)
 
-    url = job_info['url']
-    dest_dir = job_info['dest_dir']
+    audio_file = Path('/tmp/') / job_id
+    job_id = job_info['job_id']
+    title = job_info['title']
+
     update_job_status(job_id, 'RUNNING', 0)
-    p = Process(target=worker, args=(url, dest_dir, job_id))
-    p.start()
+    # p = Process(target=worker, args=(url, dest_dir, job_id))
+    # p.start()
+    worker(audio_file, job_id, title)
     # send to new in-process page, job_id as key
     return redirect(f'/job/{job_id}')
 
