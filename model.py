@@ -54,7 +54,8 @@ def make_database(cursor=None):
     cursor.execute(f'''CREATE TABLE {JOB_TABLE}
                     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, 
-                    title text NOT NULL,
+                    podcast text NOT NULL,
+                    episode_number text NOT NULL,
                     job_id text NOT NULL,
                     elapsed INTEGER NOT NULL DEFAULT 0,
                     status text NOT NULL, 
@@ -79,9 +80,9 @@ def save_log_message(job_id: str, message:str, cursor=None):
 
 
 @db_wrapper
-def save_new_job(job_id: str, title: str, cursor=None):
-    cursor.execute(f'INSERT INTO {JOB_TABLE} (title, job_id, status) values (?,?,?)',
-                   (title, job_id, "NEW"))
+def save_new_job(job_id: str, podcast: str, episode_number: str, cursor=None):
+    cursor.execute(f'INSERT INTO {JOB_TABLE} (podcast, episode_number, job_id, status) values (?,?,?,?)',
+                   (podcast, episode__number, job_id, "NEW"))
 
 
 @db_wrapper

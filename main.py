@@ -31,8 +31,8 @@ def dual_log(job_id: str, log_str: str):
 
 # Worker process - single download job
 # TODO poll the DB for other new jobs
-def worker(audio_file: Path, job_id: str, title: str):
-    dual_log(job_id, f'Starting WhisperX on {job_id} from {title}')
+def worker(audio_file: Path, job_id: str, podcast: str, episode_number: str):
+    dual_log(job_id, f'Starting WhisperX on {job_id} from {podcast} episode {episode_number}')
 
     device = "cuda"
     batch_size = 16  # reduce if low on GPU mem
@@ -116,8 +116,8 @@ def poll_job(job_id):
                            status=status, restart_url=restart_url, title=title)
 
 
-@app.route('/submit', methods=['POST'])
-def submit():
+@app.route('/submit/<podcast>/<episode_number>', methods=['POST'])
+def submit(podcast: str, episode_number: str):
     job_id = uuid4().hex
     filedata = request.files['file']
     filename = filedata.filename
@@ -125,19 +125,21 @@ def submit():
         app.logger.error('No file uploaded')
         abort(400, 'No file uploaded')
 
-    title = request.form['title']
-    if title == '':
-        app.logger.error('No title provided')
-        abort(400, 'No title provided')
+    if not podcast:
+        app.logger.error('No podcast name provided')
+        abort(400, 'No podcast name provided')
+    if not episode_number:
+        app.logger.error('No episode number provided')
+        abort(400, 'No episode number provided')
 
     # Save filedata to tempfile
     audio_file = Path('/tmp/') / job_id
     audio_file.write_bytes(filedata.read())
     app.logger.info(f'Saved {filename} to {audio_file}')
     # Save to DB
-    save_new_job(job_id, title)
+    save_new_job(job_id, podcast, episode_number, title)
     update_job_status(job_id, 'RUNNING', 0)
-    return(worker(audio_file, job_id, title))
+    return(worker(audio_file, job_id, podcast, episode_number))
     # NB Process commented out - with just the 2080 we are limited to one job at a time,
     # so its best to block on completion
     # p = Process(target=worker, args=(audio_file, job_id, title))
