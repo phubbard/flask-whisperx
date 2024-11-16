@@ -137,7 +137,7 @@ def submit(podcast: str, episode_number: str):
     audio_file.write_bytes(filedata.read())
     app.logger.info(f'Saved {filename} to {audio_file}')
     # Save to DB
-    save_new_job(job_id, podcast, episode_number, title)
+    save_new_job(job_id, podcast, episode_number)
     update_job_status(job_id, 'RUNNING', 0)
     return(worker(audio_file, job_id, podcast, episode_number))
     # NB Process commented out - with just the 2080 we are limited to one job at a time,

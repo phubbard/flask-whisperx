@@ -82,7 +82,7 @@ def save_log_message(job_id: str, message:str, cursor=None):
 @db_wrapper
 def save_new_job(job_id: str, podcast: str, episode_number: str, cursor=None):
     cursor.execute(f'INSERT INTO {JOB_TABLE} (podcast, episode_number, job_id, status) values (?,?,?,?)',
-                   (podcast, episode__number, job_id, "NEW"))
+                   (podcast, episode_number, job_id, "NEW"))
 
 
 @db_wrapper
