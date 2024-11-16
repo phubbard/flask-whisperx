@@ -3,3 +3,4 @@ tmp
 venv
 ytdl.sqlite
 __pycache__
+whisperx.sqlite
