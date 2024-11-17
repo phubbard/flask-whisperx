@@ -12,6 +12,7 @@ import time
 import torch.cuda
 from dotenv import load_dotenv
 
+import logging
 from flask import Flask, request, render_template, url_for, redirect, make_response, abort, jsonify
 import whisperx
 
@@ -19,6 +20,8 @@ from model import save_log_message, get_job, get_job_logs, \
     save_new_job, update_job_status, get_all_jobs
 
 app = Flask('flask-whisperx')
+# Crank max payload to 10GB
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 * 1024
 app.logger.setLevel('DEBUG')
 
 load_dotenv()  # take environment variables from .env.
@@ -108,12 +111,13 @@ def poll_job(job_id):
     if job_info is None:
         return make_response(f'Job {job_id} not found', 404)
 
-    title = job_info['title']
+    podcast = job_info['podcast']
+    episode_number = job_info['episode_number']
     status = job_info['status']
     job_logs = get_job_logs(job_id)
     restart_url = url_for('index')
     return render_template('job.html', job_logs=job_logs,
-                           status=status, restart_url=restart_url, title=title)
+                           status=status, restart_url=restart_url, podcast=podcast, episode_number=episode_number)
 
 
 @app.route('/submit/<podcast>/<episode_number>', methods=['POST'])
